@@ -3,11 +3,14 @@ import {
 	html,
 	nothing
 } from "lit-element";
+import {searchStyles} from "../styles/Search.styles";
 import {calculateLatestMonthCompanyIncome} from "../../utils/helpersMethods";
 
 export class Search extends LitElement {
 	static get styles() {
-		return []
+		return [
+			searchStyles()
+		]
 	}
 
 	static get properties() {
@@ -47,14 +50,17 @@ const lastMonthIncomeContainsPhrase = calculateLatestMonthCompanyIncome(company.
 
 	updateUserInput(e) {
 		console.log(e);
-		const inputElement = this.shadowRoot.querySelector("#search");
+		const inputElement = this.shadowRoot.querySelector("#company-search");
 		this.filterCompanies(inputElement.value);
 		console.log(inputElement.value);
 	}
 
 	render() {
 		return html`
-		<input id="search" type="text" @input="${this.updateUserInput}"/>
+<div class="search">
+<label for="company-search" class="search__title">Search companies data</label>
+		<input class="search__input" id="company-search" type="text" @input="${this.updateUserInput}"/>
+		</div>
 		`
 	}
 

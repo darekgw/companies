@@ -36,7 +36,7 @@ export class Companies extends LitElement {
 		this.name = 'name';
 		this.city = 'city';
 		this.numberOfRecords = undefined;
-		this.numberOfRecordsToShow = 20;
+		this.numberOfRecordsToShow = 15;
 		this.numberOfPages = undefined;
 		this.currentPage = 1;
 	}
@@ -93,35 +93,46 @@ export class Companies extends LitElement {
 		if (this.companies.length === 0) return html``;
 		console.log('this.companiesFinancialData ', this.companiesFinancialData)
 		return html`
-		<app-search .companies="${this.companies}" .financialData="${this.companiesFinancialData}"></app-search>
-        <table class="table">
+		<div class="companies">
+		<h1 class="companies__title">Companies data table</h1>
+		<div class="companies__search">
+			<app-search .companies="${this.companies}" .financialData="${this.companiesFinancialData}"></app-search>
+		</div>
+		<div class="companies__table-wrapper">
+        <table class="table companies__table">
 			<thead class="table__head-wrapper">
 				 <tr class="table__row">
-					 <th class="table__head" @click="${(e) => this.__sort(e, this.id)}">Company id</th>
-					 <th class="table__head"  @click="${(e) => this.__sort(e, this.name)}">Company name</th>
-					 <th class="table__head"  @click="${(e) => this.__sort(e, this.city)}">City</th>
-					 <th class="table__head" @click="${(e) => this.sortByIncome(e)}">Company last month income</th>
-					 <th class="table__head">Total company income</th>
-					 <th class="table__head">Company average income</th>
+					 <th class="table__head table__head--id" @click="${(e) => this.__sort(e, this.id)}">Id</th>
+					 <th class="table__head table__head--name"  @click="${(e) => this.__sort(e, this.name)}">Company name</th>
+					 <th class="table__head table__head--city"  @click="${(e) => this.__sort(e, this.city)}">City</th>
+					 <th class="table__head table__head--right table__head--last-income" @click="${(e) => this.sortByIncome(e)}">Last month income</th>
+					 <th class="table__head table__head--right table__head--total-income">Total income</th>
+					 <th class="table__head table__head--right table__head--average-income">Average income</th>
 				</tr>
 			</thead>
-			<tbody>
+			<tbody class="table__body">
 				   ${this.__generateTable(this.filteredCompanies, this.companiesFinancialData)}
 			</tbody>
 		</table>
+		</div>
 		${this.generatePaginationButtons()}
+		</div>
         `
 	}
 
 	generatePaginationButtons() {
 		return html`
-		<div><button class="backward" @click="${(e) => this.pagination(e)}">Back</button><button class="forward" @click="${(e) => this.pagination(e)}">Forward</button></div>
+		<div class="companies__pagination pagination">
+			<button class="pagination-button pagination-button--backward" @click="${(e) => this.pagination(e)}">Back</button>
+			<button class="pagination-button pagination-button--info" disabled>Page ${this.currentPage} of ${this.numberOfPages}</button>
+			<button class="pagination-button pagination-button--forward" @click="${(e) => this.pagination(e)}">Forward</button>
+		</div>
 		`
 	}
 
 	pagination(e) {
 		const paginationButton = e.target;
-		const paginateForward = paginationButton.classList.contains('forward');
+		const paginateForward = paginationButton.classList.contains('pagination-button--forward');
 		if (paginateForward) {
 			if (this.currentPage < this.numberOfPages)
 				this.currentPage += 1;
