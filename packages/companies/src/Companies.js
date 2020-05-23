@@ -3,12 +3,15 @@ import {
 	html,
 	nothing
 } from "lit-element";
+import {companiesStyles} from "../styles/Companies.styles";
 import "../../search/app-search";
 import {calculateLatestMonthCompanyIncome} from "../../utils/helpersMethods";
 
 export class Companies extends LitElement {
 	static get styles() {
-		return []
+		return [
+			companiesStyles()
+		]
 	}
 
 	static get properties() {
@@ -91,18 +94,15 @@ export class Companies extends LitElement {
 		console.log('this.companiesFinancialData ', this.companiesFinancialData)
 		return html`
 		<app-search .companies="${this.companies}" .financialData="${this.companiesFinancialData}"></app-search>
-        <table>
-			<thead>
-				<tr>
-					<th colspan="2">Companies</th>
-				</tr>
-				 <tr>
-					<th @click="${(e) => this.__sort(e, this.id)}">Company id</th>
-					 <th  @click="${(e) => this.__sort(e, this.name)}">Company name</th>
-					 <th  @click="${(e) => this.__sort(e, this.city)}">City</th>
-					 <th @click="${(e) => this.sortByIncome(e)}">Company last month income</th>
-					 <th>Total company income</th>
-					 <th>Company average income</th>
+        <table class="table">
+			<thead class="table__head-wrapper">
+				 <tr class="table__row">
+					 <th class="table__head" @click="${(e) => this.__sort(e, this.id)}">Company id</th>
+					 <th class="table__head"  @click="${(e) => this.__sort(e, this.name)}">Company name</th>
+					 <th class="table__head"  @click="${(e) => this.__sort(e, this.city)}">City</th>
+					 <th class="table__head" @click="${(e) => this.sortByIncome(e)}">Company last month income</th>
+					 <th class="table__head">Total company income</th>
+					 <th class="table__head">Company average income</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -141,10 +141,10 @@ export class Companies extends LitElement {
 		const companiesToShow = companies.slice(firstRecordToShowIndex, lastRecordToShowIndex);
 		return companiesToShow.map(company => {
 			return html`
-			<tr>
-				<td>${company.id}</td>
-				<td>${company.name}</td>
-				<td>${company.city}</td>
+			<tr class="table__row">
+				<td class="table__data table__data--left table__data--left">${company.id}</td>
+				<td class="table__data table__data--left class="table__data table__data--right" ">${company.name}</td>
+				<td class="table__data table__data--left">${company.city}</td>
 				${this.__getLastMonthIncome(company.id, financialData)}
 				${this.__getCompanySumOfIncome(company.id)}
 				${this.__getCompanyAverageIncome(company.id)}
@@ -156,7 +156,7 @@ export class Companies extends LitElement {
 	__getLastMonthIncome(companyId) {
 		if (this.companiesFinancialData.length === 0) return html`<td></td>`;
 		return html`
-		<td>${calculateLatestMonthCompanyIncome(companyId, this.companiesFinancialData)}</td>
+		<td class="table__data table__data--right">${calculateLatestMonthCompanyIncome(companyId, this.companiesFinancialData)}</td>
 		`
 	}
 
@@ -170,7 +170,7 @@ export class Companies extends LitElement {
 			return Number(sum) + Number(income.value)
 		}, 0);
 		return html`
-		<td>${companySumOfIncome.toFixed(2)}</td>
+		<td class="table__data table__data--right">${companySumOfIncome.toFixed(2)}</td>
 		`
 	}
 
@@ -186,7 +186,7 @@ export class Companies extends LitElement {
 		const numberOfMonths = companyFinance.incomes.length;
 		const averageIncome = companySumOfIncome / numberOfMonths;
 		return html`
-		<td>${averageIncome.toFixed(2)}</td>
+		<td class="table__data table__data--right">${averageIncome.toFixed(2)}</td>
 		`
 	}
 

@@ -1,7 +1,7 @@
 {
-  "name": "lit-element-starter",
+  "name": "Companies",
   "version": "1.0.0",
-  "description": "Web-components with LitElement library project starter",
+  "description": "Companies data table",
   "main": "js/app.js",
   "scripts": {
     "start": "cross-env NODE_ENV=development webpack-dev-server --inline --progress --colors",
