@@ -1,10 +1,9 @@
 import {
 	LitElement,
-	html,
-	nothing
+	html
 } from "lit-element";
 import {searchStyles} from "../styles/Search.styles";
-import {calculateLatestMonthCompanyIncome, findInTotalCompanyIncome, findAverageCompanyIncome} from "../../utils/helpersMethods";
+import {findInTotalCompanyIncome, findAverageCompanyIncome, findLastMonthCompanyIncome} from "../../utils/helpersMethods";
 
 export class Search extends LitElement {
 	static get styles() {
@@ -17,7 +16,6 @@ export class Search extends LitElement {
 		return {
 			companies: {type: Array},
 			filteredCompanies: {type: Array},
-			financialData: {type: Array},
 			calculatedFinancialData: {type: Array}
 		};
 	}
@@ -26,7 +24,6 @@ export class Search extends LitElement {
 		super();
 		this.companies = [];
 		this.filteredCompanies = [];
-		this.financialData = [];
 		this.calculatedFinancialData = [];
 	}
 
@@ -35,14 +32,14 @@ export class Search extends LitElement {
 				const companiesContainsPhrase = `${company.id} ${company.name} ${company.city}`
 					.toLowerCase()
 					.includes(userInput.toLowerCase());
-const lastMonthIncomeContainsPhrase = calculateLatestMonthCompanyIncome(company.id, this.financialData).includes(userInput);
-const totalCompanyIncomeContainsPhrase = findInTotalCompanyIncome(company.id, this.calculatedFinancialData).includes(userInput);
+				const totalCompanyIncomeContainsPhrase = findInTotalCompanyIncome(company.id, this.calculatedFinancialData).includes(userInput);
 				const averageCompanyIncomeContainsPhrase = findAverageCompanyIncome(company.id, this.calculatedFinancialData).includes(userInput);
-			return companiesContainsPhrase || lastMonthIncomeContainsPhrase || totalCompanyIncomeContainsPhrase || averageCompanyIncomeContainsPhrase;
+				const lastMonthCompanyIncomeContainsPhrase = findLastMonthCompanyIncome(company.id, this.calculatedFinancialData).includes(userInput);
+				return companiesContainsPhrase || totalCompanyIncomeContainsPhrase || averageCompanyIncomeContainsPhrase || lastMonthCompanyIncomeContainsPhrase;
 			}
 		);
-		console.log(this.filteredCompanies);
-		let userFilteredCompanies = new CustomEvent("filteredCompany", {
+
+		const userFilteredCompanies = new CustomEvent("filteredCompany", {
 			detail: {
 				filteredCompanies: this.filteredCompanies
 			},
@@ -53,19 +50,16 @@ const totalCompanyIncomeContainsPhrase = findInTotalCompanyIncome(company.id, th
 	}
 
 	updateUserInput(e) {
-		console.log(e);
 		const inputElement = this.shadowRoot.querySelector("#company-search");
 		this.filterCompanies(inputElement.value);
-		console.log(inputElement.value);
 	}
 
 	render() {
 		return html`
-<div class="search">
-<label for="company-search" class="search__title">Search companies data</label>
-		<input class="search__input" id="company-search" type="text" @input="${this.updateUserInput}"/>
+		<div class="search">
+			<label for="company-search" class="search__title">Search companies data</label>
+			<input class="search__input" id="company-search" type="text" @input="${this.updateUserInput}"/>
 		</div>
 		`
 	}
-
 }
