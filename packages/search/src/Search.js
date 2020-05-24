@@ -4,7 +4,7 @@ import {
 	nothing
 } from "lit-element";
 import {searchStyles} from "../styles/Search.styles";
-import {calculateLatestMonthCompanyIncome} from "../../utils/helpersMethods";
+import {calculateLatestMonthCompanyIncome, findInTotalCompanyIncome, findAverageCompanyIncome} from "../../utils/helpersMethods";
 
 export class Search extends LitElement {
 	static get styles() {
@@ -17,7 +17,8 @@ export class Search extends LitElement {
 		return {
 			companies: {type: Array},
 			filteredCompanies: {type: Array},
-			financialData: {type: Array}
+			financialData: {type: Array},
+			calculatedFinancialData: {type: Array}
 		};
 	}
 
@@ -26,6 +27,7 @@ export class Search extends LitElement {
 		this.companies = [];
 		this.filteredCompanies = [];
 		this.financialData = [];
+		this.calculatedFinancialData = [];
 	}
 
 	filterCompanies(userInput) {
@@ -34,7 +36,9 @@ export class Search extends LitElement {
 					.toLowerCase()
 					.includes(userInput.toLowerCase());
 const lastMonthIncomeContainsPhrase = calculateLatestMonthCompanyIncome(company.id, this.financialData).includes(userInput);
-			return companiesContainsPhrase || lastMonthIncomeContainsPhrase;
+const totalCompanyIncomeContainsPhrase = findInTotalCompanyIncome(company.id, this.calculatedFinancialData).includes(userInput);
+				const averageCompanyIncomeContainsPhrase = findAverageCompanyIncome(company.id, this.calculatedFinancialData).includes(userInput);
+			return companiesContainsPhrase || lastMonthIncomeContainsPhrase || totalCompanyIncomeContainsPhrase || averageCompanyIncomeContainsPhrase;
 			}
 		);
 		console.log(this.filteredCompanies);

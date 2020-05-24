@@ -2,6 +2,9 @@
 
 ## General info
 This web application was prepared to retrieve and show list of companies with their financial data. <br>
+You can use search input to filter companies data by all columns.<br>
+You can sort data ascending or descending by clicking every column header.<br>
+The data in table are paginated to make navigation on page more comfortable.
 
 ## Technologies
 This project is a frontend part of web application.<br/>

@@ -32,10 +32,13 @@ export class Companies extends LitElement {
 		this.companiesId = [];
 		this.companiesFinancialData = [];
 		this.filteredCompaniesFinancialData = [];
+		this.calculatedFinancialData = [];
 		this.id = 'id';
 		this.name = 'name';
 		this.city = 'city';
-		this.numberOfRecords = undefined;
+		this.totalIncome = 'totalIncome';
+		this.averageIncome = 'averageIncome';
+		this.lastMonthIncome = 'lastMonthIncome';
 		this.numberOfRecordsToShow = 15;
 		this.numberOfPages = undefined;
 		this.currentPage = 1;
@@ -54,6 +57,7 @@ export class Companies extends LitElement {
 		this.filteredCompaniesFinancialData = this.companiesFinancialData.filter(companyFinance => {
 			return this.filteredCompanies.find(company => company.id === companyFinance.id);
 		})
+		this.numberOfPages = Math.ceil(this.filteredCompanies.length / this.numberOfRecordsToShow);
 	}
 
 	firstUpdated() {
@@ -63,9 +67,8 @@ export class Companies extends LitElement {
 			.then(r => {
 				this.companies = r;
 				this.filteredCompanies = r;
-				console.log(this.companies)
-				this.numberOfRecords = this.companies.length;
-				this.numberOfPages = Math.ceil(this.numberOfRecords / this.numberOfRecordsToShow);
+				console.log('FA filteredCompanies ', this.filteredCompanies)
+				this.numberOfPages = Math.ceil(this.filteredCompanies.length / this.numberOfRecordsToShow);
 				console.log('numOfPages ', this.numberOfPages)
 				return r;
 			})
@@ -84,6 +87,7 @@ export class Companies extends LitElement {
 			})
 			.then(r => {
 				this.companiesFinancialData = [...tmpFinancialData];
+				this.__calculateFinancialData();
 				console.log('this.companiesFinancialData ', this.companiesFinancialData)
 			})
 		;
@@ -96,7 +100,7 @@ export class Companies extends LitElement {
 		<div class="companies">
 		<h1 class="companies__title">Companies data table</h1>
 		<div class="companies__search">
-			<app-search .companies="${this.companies}" .financialData="${this.companiesFinancialData}"></app-search>
+			<app-search .companies="${this.companies}" .financialData="${this.companiesFinancialData}" .calculatedFinancialData="${this.calculatedFinancialData}"></app-search>
 		</div>
 		<div class="companies__table-wrapper">
         <table class="table companies__table">
@@ -105,9 +109,9 @@ export class Companies extends LitElement {
 					 <th class="table__head table__head--id" @click="${(e) => this.__sort(e, this.id)}">Id</th>
 					 <th class="table__head table__head--name"  @click="${(e) => this.__sort(e, this.name)}">Company name</th>
 					 <th class="table__head table__head--city"  @click="${(e) => this.__sort(e, this.city)}">City</th>
+					 <th class="table__head table__head--right table__head--total-income" @click="${(e) => this.__sortByCalculatedIncome(e, this.totalIncome)}">Total income</th>
+					 <th class="table__head table__head--right table__head--average-income" @click="${(e) => this.__sortByCalculatedIncome(e, this.averageIncome)}">Average income</th>
 					 <th class="table__head table__head--right table__head--last-income" @click="${(e) => this.sortByIncome(e)}">Last month income</th>
-					 <th class="table__head table__head--right table__head--total-income">Total income</th>
-					 <th class="table__head table__head--right table__head--average-income">Average income</th>
 				</tr>
 			</thead>
 			<tbody class="table__body">
@@ -143,22 +147,33 @@ export class Companies extends LitElement {
 		}
 	}
 
-	__generateTable(companies, financialData) {
+	__generateTable(filteredCompanies, financialData) {
+		console.log('__generateTable currentPage', this.currentPage);
+		console.log('__generateTable numberOfPages', this.numberOfPages);
+		if(this.numberOfPages === 0) {
+			this.currentPage = 0;
+		} else if(this.numberOfPages === 1) {
+			this.currentPage = 1;
+		} else if(this.currentPage > this.numberOfPages) {
+			this.currentPage = this.numberOfPages;
+		} else if(this.currentPage === 0 && this.numberOfPages > 0) {
+			this.currentPage = 1;
+		}
 		let firstRecordToShowIndex = 0;
 		if (this.currentPage !== 1) {
 			firstRecordToShowIndex = this.numberOfRecordsToShow * (this.currentPage - 1);
 		}
 		const lastRecordToShowIndex = firstRecordToShowIndex + this.numberOfRecordsToShow;
-		const companiesToShow = companies.slice(firstRecordToShowIndex, lastRecordToShowIndex);
+		const companiesToShow = filteredCompanies.slice(firstRecordToShowIndex, lastRecordToShowIndex);
 		return companiesToShow.map(company => {
 			return html`
 			<tr class="table__row">
 				<td class="table__data table__data--left table__data--left">${company.id}</td>
 				<td class="table__data table__data--left class="table__data table__data--right" ">${company.name}</td>
 				<td class="table__data table__data--left">${company.city}</td>
-				${this.__getLastMonthIncome(company.id, financialData)}
 				${this.__getCompanySumOfIncome(company.id)}
 				${this.__getCompanyAverageIncome(company.id)}
+				${this.__getLastMonthIncome(company.id, financialData)}
 			</tr>
 			`
 		})
@@ -288,6 +303,118 @@ export class Companies extends LitElement {
 			});
 			console.log('inc ', aLastMonthIncome);
 		})
+	}
+
+	__sortByCalculatedIncome(e, incomeType) {
+		const targetElement = e.target;
+		const sortedByTargetElementAsc = targetElement.classList.contains('asc');
+		const previousElementSortedAsc = this.shadowRoot.querySelector('.asc');
+		const previousElementSortedDesc = this.shadowRoot.querySelector('.desc');
+		if (previousElementSortedAsc) {
+			previousElementSortedAsc.classList.remove('asc');
+		} else if (previousElementSortedDesc) {
+			previousElementSortedDesc.classList.remove('desc')
+		}
+		if (sortedByTargetElementAsc) {
+			this.calculatedFinancialData = [...this.calculatedFinancialData.sort((a, b) => {
+				// const aLastMonthIncome = a.incomes.reduce((x, y) => {
+				// 	return (x.date > y.date) ? x : y
+				// });
+				// const bLastMonthIncome = b.incomes.reduce((x, y) => {
+				// 	return (x.date > y.date) ? x : y
+				// });
+				return (a[incomeType] > b[incomeType]) ? 1 : ((b[incomeType] > a[incomeType]) ? -1 : 0);
+			})]
+			this.filteredCompanies = [...this.filteredCompanies.sort((a, b) => {
+				const aCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === a.id);
+				const bCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === b.id);
+				console.log('aCompanyFinancialData ', this.calculatedFinancialData.indexOf(aCompanyFinancialData));
+				return this.calculatedFinancialData.indexOf(bCompanyFinancialData) - this.calculatedFinancialData.indexOf(aCompanyFinancialData);
+			})];
+			console.log('this.filteredCompanies ', this.filteredCompanies);
+			targetElement.classList.remove('asc');
+			targetElement.classList.add('desc')
+		} else {
+			console.log('sort asc');
+			this.calculatedFinancialData = [...this.calculatedFinancialData.sort((a, b) => {
+				// const aLastMonthIncome = a.incomes.reduce((x, y) => {
+				// 	return (x.date > y.date) ? x : y
+				// });
+				// const bLastMonthIncome = b.incomes.reduce((x, y) => {
+				// 	return (x.date > y.date) ? x : y
+				// });
+				return (a[incomeType] > b[incomeType]) ? 1 : ((b[incomeType] > a[incomeType]) ? -1 : 0);
+			})]
+			this.filteredCompanies = [...this.filteredCompanies.sort((a, b) => {
+				const aCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === a.id);
+				const bCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === b.id);
+				console.log('aCompanyFinancialData ', this.calculatedFinancialData.indexOf(aCompanyFinancialData));
+				return this.calculatedFinancialData.indexOf(aCompanyFinancialData) - this.calculatedFinancialData.indexOf(bCompanyFinancialData)
+			})];
+			targetElement.classList.remove('desc');
+			targetElement.classList.add('asc')
+		}
+
+
+		console.log('sortByIncome')
+
+		// this.companiesFinancialData.forEach(fin => {
+		// 	console.log(fin.incomes.reduce((x, y) => {
+		// 		return (x.date > y.date) ? x : y
+		// 	}))
+		// })
+		// console.log('this.companiesFinancialData ', this.companiesFinancialData);
+		// this.companiesFinancialData.forEach(fin => {
+		// 	const aLastMonthIncome = fin.incomes.reduce((x, y) => {
+		// 		return (x.date > y.date) ? x : y
+		// 	});
+		// 	console.log('inc ', aLastMonthIncome);
+		// })
+	}
+
+	__calculateFinancialData() {
+		this.companies.forEach(company => {
+			const nextCompany = {};
+			nextCompany.id = company.id;
+			this.calculatedFinancialData.push(nextCompany);
+		});
+		this.__calculateTotalCompaniesIncome();
+		this.__calculateAverageCompaniesIncome();
+		console.log('__calculateFinancialData calculatedFinancialData', this.calculatedFinancialData);
+	}
+
+	__calculateTotalCompaniesIncome() {
+		this.calculatedFinancialData.forEach(financialData => {
+
+
+			const companyFinance = this.companiesFinancialData.find(fin => {
+					return fin.id === financialData.id;
+				}
+			);
+			const companySumOfIncome = companyFinance.incomes.reduce((sum, income) => {
+				return Number(sum) + Number(income.value)
+			}, 0);
+			financialData.totalIncome = companySumOfIncome.toFixed(2);
+		})
+
+	}
+
+	__calculateAverageCompaniesIncome() {
+		this.calculatedFinancialData.forEach(financialData => {
+
+			const companyFinance = this.companiesFinancialData.find(fin => {
+					return fin.id === financialData.id;
+				}
+			);
+			const numberOfMonths = companyFinance.incomes.length;
+			const averageIncome = financialData.totalIncome / numberOfMonths;
+			financialData.averageIncome = averageIncome.toFixed(2);
+		})
+	}
+
+
+	__findLastMonth() {
+
 	}
 
 }

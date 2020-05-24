@@ -28,6 +28,7 @@ export const companiesStyles = () => {
 	
 	.table__head {
 	text-align: left;
+	cursor: pointer;
 	}
 	
 	.table__head--right {
@@ -43,7 +44,7 @@ export const companiesStyles = () => {
 	}
 	
 	.table__head--last-income {
-	min-width: 65px;
+	min-width: 80px;
 	}
 	
 	.table__head--total-income {
