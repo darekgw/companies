@@ -42,6 +42,7 @@ export class Companies extends LitElement {
 		this.numberOfPages = undefined;
 		this.currentPage = 1;
 		this.lastMonth = undefined;
+		this.sortDirection = undefined;
 	}
 
 	connectedCallback() {
@@ -53,7 +54,7 @@ export class Companies extends LitElement {
 	}
 
 	__getFilteredCompanies(event) {
-		this.filteredCompanies = [...event.detail.filteredCompanies];
+		this.filteredCompanies = this.sortDirection === 'desc' ? [...event.detail.filteredCompanies].reverse() : [...event.detail.filteredCompanies];
 		this.filteredCompaniesFinancialData = this.companiesFinancialData.filter(companyFinance => {
 			return this.filteredCompanies.find(company => company.id === companyFinance.id);
 		})
@@ -111,9 +112,19 @@ export class Companies extends LitElement {
 							 	<span class="table__sort table__sort--asc">(asc)</span>
 								<span class="table__sort table__sort--desc">(desc)</span>
 							 </th>
-							 <th class="table__head table__head--right table__head--total-income" @click="${(e) => this.__sortByCalculatedIncome(e, this.totalIncome)}">Total income</th>
-							 <th class="table__head table__head--right table__head--average-income" @click="${(e) => this.__sortByCalculatedIncome(e, this.averageIncome)}">Average income</th>
-							 <th class="table__head table__head--right table__head--last-income" @click="${(e) => this.__sortByCalculatedIncome(e, this.lastMonthIncome)}">Last month income <span class="table__head-month">${this.lastMonth}</span></th>
+							 <th class="table__head table__head--right table__head--total-income" @click="${(e) => this.__sortByCalculatedIncome(e, this.totalIncome)}">Total income 
+								 <span class="table__sort table__sort--asc">(asc)</span>
+								 <span class="table__sort table__sort--desc">(desc)</span>
+							 </th>
+							 <th class="table__head table__head--right table__head--average-income" @click="${(e) => this.__sortByCalculatedIncome(e, this.averageIncome)}">Average income 
+								 <span class="table__sort table__sort--asc">(asc)</span>
+								 <span class="table__sort table__sort--desc">(desc)</span>
+							 </th>
+							 <th class="table__head table__head--right table__head--last-income" @click="${(e) => this.__sortByCalculatedIncome(e, this.lastMonthIncome)}">Last month income 
+								 <span class="table__head-month">${this.lastMonth}</span> 
+								 <span class="table__sort table__sort--asc">(asc)</span>
+								 <span class="table__sort table__sort--desc">(desc)</span>
+							 </th>
 						</tr>
 					</thead>
 					<tbody class="table__body">
@@ -129,9 +140,9 @@ export class Companies extends LitElement {
 	__generatePaginationButtons() {
 		return html`
 		<div class="companies__pagination pagination">
-			<button class="pagination-button pagination-button--backward" @click="${(e) => this.__pagination(e)}">Back</button>
+			<button class="pagination-button pagination-button--backward" @click="${(e) => this.__pagination(e)}">Previous</button>
 			<button class="pagination-button pagination-button--info" disabled>Page ${this.currentPage} of ${this.numberOfPages}</button>
-			<button class="pagination-button pagination-button--forward" @click="${(e) => this.__pagination(e)}">Forward</button>
+			<button class="pagination-button pagination-button--forward" @click="${(e) => this.__pagination(e)}">Next</button>
 		</div>
 		`
 	}
@@ -144,6 +155,7 @@ export class Companies extends LitElement {
 		} else {
 			if (this.currentPage > 1) this.currentPage -= 1;
 		}
+		this.__toggleDisabledPaginationButtons();
 	}
 
 	__setCurrentPage() {
@@ -155,6 +167,24 @@ export class Companies extends LitElement {
 			this.currentPage = this.numberOfPages;
 		} else if (this.currentPage === 0 && this.numberOfPages > 0) {
 			this.currentPage = 1;
+		}
+		this.__toggleDisabledPaginationButtons();
+	}
+
+	__toggleDisabledPaginationButtons() {
+		const forwardButton = this.shadowRoot.querySelector('.pagination-button--forward');
+		const backwardButton = this.shadowRoot.querySelector('.pagination-button--backward');
+		if (forwardButton && backwardButton) {
+			forwardButton.disabled = false
+			backwardButton.disabled = false;
+			if (this.numberOfPages < 2) {
+				forwardButton.disabled = true;
+				backwardButton.disabled = true;
+			} else if (this.currentPage === 1) {
+				backwardButton.disabled = true;
+			} else if (this.currentPage === this.numberOfPages) {
+				forwardButton.disabled = true;
+			}
 		}
 	}
 
@@ -209,6 +239,7 @@ export class Companies extends LitElement {
 
 	__sort(e, sortBy) {
 		let targetElement = e.target;
+		console.log(targetElement);
 		if (targetElement.tagName === "SPAN") targetElement = targetElement.parentElement;
 		const sortedByTargetElementAsc = targetElement.classList.contains('asc');
 		const descInfo = targetElement.querySelector('.table__sort--desc');
@@ -220,42 +251,53 @@ export class Companies extends LitElement {
 			targetElement.classList.add('desc')
 			descInfo.classList.add('table__sort--show');
 			ascInfo.classList.remove('table__sort--show');
+			this.sortDirection = 'desc';
 		} else {
 			this.filteredCompanies = [...this.filteredCompanies.sort((a, b) => (a[sortBy] > b[sortBy]) ? 1 : ((b[sortBy] > a[sortBy]) ? -1 : 0))];
 			targetElement.classList.remove('desc');
 			targetElement.classList.add('asc')
 			descInfo.classList.remove('table__sort--show');
 			ascInfo.classList.add('table__sort--show');
+			this.sortDirection = 'asc';
 		}
 	}
 
 	__sortByCalculatedIncome(e, incomeType) {
-		const targetElement = e.target;
+		let targetElement = e.target;
+		if (targetElement.tagName === "SPAN") targetElement = targetElement.parentElement;
 		const sortedByTargetElementAsc = targetElement.classList.contains('asc');
+		const descInfo = targetElement.querySelector('.table__sort--desc');
+		const ascInfo = targetElement.querySelector('.table__sort--asc');
 		this.__removeSortClassFromPreviousElement();
 		if (sortedByTargetElementAsc) {
-			this.calculatedFinancialData = [...this.calculatedFinancialData.sort((a, b) => {
-				return (a[incomeType] > b[incomeType]) ? 1 : ((b[incomeType] > a[incomeType]) ? -1 : 0);
-			})];
-			this.filteredCompanies = [...this.filteredCompanies.sort((a, b) => {
-				const aCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === a.id);
-				const bCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === b.id);
-				return this.calculatedFinancialData.indexOf(bCompanyFinancialData) - this.calculatedFinancialData.indexOf(aCompanyFinancialData);
-			})];
+			this.__sortFilteredCompanies(incomeType, 'desc');
 			targetElement.classList.remove('asc');
-			targetElement.classList.add('desc')
+			targetElement.classList.add('desc');
+			descInfo.classList.add('table__sort--show');
+			ascInfo.classList.remove('table__sort--show');
+			this.sortDirection = 'desc';
 		} else {
-			this.calculatedFinancialData = [...this.calculatedFinancialData.sort((a, b) => {
-				return (a[incomeType] > b[incomeType]) ? 1 : ((b[incomeType] > a[incomeType]) ? -1 : 0);
-			})];
-			this.filteredCompanies = [...this.filteredCompanies.sort((a, b) => {
-				const aCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === a.id);
-				const bCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === b.id);
-				return this.calculatedFinancialData.indexOf(aCompanyFinancialData) - this.calculatedFinancialData.indexOf(bCompanyFinancialData)
-			})];
+			this.__sortFilteredCompanies(incomeType, 'asc');
 			targetElement.classList.remove('desc');
-			targetElement.classList.add('asc')
+			targetElement.classList.add('asc');
+			descInfo.classList.remove('table__sort--show');
+			ascInfo.classList.add('table__sort--show');
+			this.sortDirection = 'asc';
 		}
+	}
+
+	__sortFilteredCompanies(incomeType, sortDirection) {
+		this.calculatedFinancialData = [...this.calculatedFinancialData.sort((a, b) => {
+			return (Number(a[incomeType]) > Number(b[incomeType])) ? 1 : ((Number(b[incomeType]) > Number(a[incomeType])) ? -1 : 0);
+		})];
+		this.filteredCompanies = [...this.filteredCompanies.sort((a, b) => {
+			const aCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === a.id);
+			const bCompanyFinancialData = this.calculatedFinancialData.find(companyFinance => companyFinance.id === b.id);
+			if (sortDirection === 'desc') {
+				return this.calculatedFinancialData.indexOf(bCompanyFinancialData) - this.calculatedFinancialData.indexOf(aCompanyFinancialData);
+			}
+			return this.calculatedFinancialData.indexOf(aCompanyFinancialData) - this.calculatedFinancialData.indexOf(bCompanyFinancialData);
+		})];
 	}
 
 	__removeSortClassFromPreviousElement() {

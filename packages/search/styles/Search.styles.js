@@ -5,17 +5,30 @@ export const searchStyles = () => {
 	.search {
 		display: flex;
 		justify-content: flex-end;
-		font-size: 16px;
+		font-size: var(--mobile-font-size);
 	}
 	
 	.search__title {
-		margin-right: 8px;
+		margin-right: var(--mobile-space);
+		line-height: 26px;
 		font-weight: bold;
+	}
+	
+	.search__input {
+		font-size: var(--mobile-font-size);
 	}
 	
 	@media screen and (min-width: 992px) {
 		.search {
-			font-size: 20px;
+			font-size: var(--desktop-font-size);
+		}
+		
+		.search__title {
+			margin-right: var(--tablet-space);
+		}
+		
+		.search__input {
+			font-size: var(--desktop-font-size);
 		}
 	}
 	
